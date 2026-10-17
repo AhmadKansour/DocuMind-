@@ -3,7 +3,9 @@ from pdf_processor import (
     extract_text_from_pdf,
     clean_text,
     split_text_into_chunks,
+    split_text_by_sentences
 )
+
 
 
 st.set_page_config(page_title="DocuMind", page_icon="📄", layout="wide")
@@ -31,7 +33,7 @@ if uploaded_file is not None:
             cleaned_text = clean_text(page["text"])
 
             if cleaned_text:
-                page_chunks = split_text_into_chunks(cleaned_text)
+                page_chunks = split_text_by_sentences(cleaned_text,chunk_size=500, overlap=1)
 
                 for chunk_number, chunk in enumerate(page_chunks, start=1):
                     all_chunks.append(
@@ -79,3 +81,6 @@ if st.button("Ask DocuMind"):
         st.warning("Please enter a question")
     else:
         st.info("AI functionality coming soon ")
+
+
+        st.subheader("Arabic Language Test")

@@ -6,6 +6,44 @@ import re
 
 
    
+def split_into_sentences(text):
+    sentences = re.split(r"(?<=[.!?؟])\s+", text)
+    return [sentence.strip() for sentence in sentences if sentence.strip()]
+
+
+  
+def split_text_by_sentences(text, chunk_size=500, overlap=1):
+    if chunk_size <= 0 or overlap < 0:
+        raise ValueError("Invalid chunk size or overlap")
+
+    sentences = split_into_sentences(text)
+    chunks = []
+    current_sentences = []
+
+    for sentence in sentences:
+        candidate = " ".join(current_sentences + [sentence])#combines sentences into 1 string, seperated by spaces 
+
+        if current_sentences and len(candidate) > chunk_size:
+            chunks.append(" ".join(current_sentences))
+
+            current_sentences = (
+                current_sentences[-overlap:] if overlap > 0 else []
+            )
+
+            while current_sentences and len(
+                " ".join(current_sentences + [sentence])
+            ) > chunk_size:
+                current_sentences.pop(0)
+
+        current_sentences.append(sentence)
+
+    if current_sentences:
+        chunks.append(" ".join(current_sentences))
+
+    return chunks
+
+
+
 def extract_text_from_pdf(uploaded_file):
     pages = []
 
