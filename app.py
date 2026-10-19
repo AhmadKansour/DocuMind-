@@ -64,7 +64,7 @@ if uploaded_file is not None:
             if cleaned_text:
                 page_chunks = split_text_by_sentences(
                     cleaned_text,
-                    chunk_size=500,
+                    chunk_size=250,
                     overlap=1
                 )
 
