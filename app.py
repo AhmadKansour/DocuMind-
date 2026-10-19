@@ -12,7 +12,8 @@ from pdf_processor import (
 from semantic_search import (
     load_embedding_model,
     create_embeddings,
-    search_similar_chunks
+    search_similar_chunks,
+    find_best_sentence
 )
 
 
@@ -181,14 +182,34 @@ if ask_clicked:
                 embeddings=embeddings,
                 top_k=3
             )
-
-        st.subheader("Most relevant passages")
-
-        for result in results:
-            st.markdown(
-                f"**Page {result['page_number']}** "
-                f"— Similarity: {result['score']:.3f}"
+            best_result = find_best_sentence(
+                model,
+                question_input,
+                results
             )
 
-            st.write(result["text"])
-            st.divider()
+            print("BEST RESULT:", best_result)
+
+      
+        st.subheader("Most relevant information")
+
+        if best_result:# checks whether the function find_best_sentence returned a result 
+            st.write(best_result["text"])
+
+            st.caption(
+                f"Source: Page {best_result['page_number']}"
+            )
+
+        else:
+            st.warning("No relevant sentence was found.")
+
+        with st.expander("View supporting passages"):
+
+            for result in results:
+                st.markdown(
+                    f"**Page {result['page_number']}** "
+                    f"— Similarity: {result['score']:.3f}"
+                )
+
+                st.write(result["text"])
+                st.divider()
