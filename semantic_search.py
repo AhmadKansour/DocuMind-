@@ -22,26 +22,49 @@ def create_embeddings(model, chunks):#This creates the embedding model object an
     return embeddings
 
 
-def search_similar_chunks(model, question, chunks, embeddings, top_k=3):
+
+def search_similar_chunks(
+    model,
+    question,
+    chunks,
+    embeddings,
+    top_k=3
+                     ):
+    # Convert the user's question into an embedding.
     question_embedding = model.encode(
         question,
         normalize_embeddings=True
     )
 
+    # Calculate similarity between the question and each chunk.
     similarity_scores = np.dot(
         embeddings,
         question_embedding
     )
 
-    top_indices = np.argsort(similarity_scores)[::-1][:top_k]
+    # Rank all chunks from highest to lowest similarity.
+    ranked_indices = np.argsort(similarity_scores)[::-1]
 
     results = []
 
-    for index in top_indices:
-        results.append({
-            "page_number": chunks[index]["page_number"],
-            "text": chunks[index]["text"],
-            "score": float(similarity_scores[index])
-        })
+    for index in ranked_indices:
+        chunk = chunks[index]
+        text = chunk["text"].strip()
+
+        # Skip very short chunks that are unlikely to be useful.
+        if len(text.split()) < 8:
+            continue
+
+        results.append(
+            {
+                "page_number": chunk["page_number"],
+                "text": text,
+                "score": float(similarity_scores[index])
+            }
+        )
+
+        # Stop after collecting the requested number of results.
+        if len(results) >= top_k:
+            break
 
     return results
