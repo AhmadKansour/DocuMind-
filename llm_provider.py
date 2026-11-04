@@ -21,9 +21,9 @@ def generate_answer(question, context):
     client = genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
-            timeout=30000,
+            timeout=60000,
             retry_options=types.HttpRetryOptions(
-                attempts=3
+                attempts=1
             )
         )
     )
@@ -50,7 +50,7 @@ User question:
 """
      #sends request to gemini
     response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
+        model="gemini-3.5-flash-lite",
         contents=prompt,
     )
 

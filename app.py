@@ -67,6 +67,94 @@ def remove_duplicate_chunks(chunks):
     return unique_chunks
 
 
+@st.cache_data(show_spinner=False)
+def get_processed_chunks(pages):
+
+    print(
+        "CHUNK CACHE MISS: Processing document chunks",
+        flush=True
+    )
+
+    all_chunks = []
+
+    for page in pages:
+
+        cleaned_text = clean_text(page["text"])
+
+        if not cleaned_text:
+            continue
+
+        # Standard fixed-size chunks
+        standard_chunks = split_text_into_chunks(
+            cleaned_text,
+            chunk_size=1000,
+            overlap=200
+        )
+
+        for chunk_number, chunk_text in enumerate(
+            standard_chunks,
+            start=1
+        ):
+            all_chunks.append({
+                "page_number": page["page_number"],
+                "chunk_number": chunk_number,
+                "text": chunk_text,
+                "section_heading": None
+            })
+
+        # Section-aware chunks
+        sections = split_text_into_sections(cleaned_text)
+
+        page_chunks = []
+
+        for section in sections:
+
+            lines = section.splitlines()
+            heading = None
+
+            if lines and is_section_heading(lines[0]):
+                heading = lines[0].strip()
+
+            if len(section) <= 1000:
+                smaller_chunks = [section]
+            else:
+                smaller_chunks = split_text_by_sentences(
+                    section,
+                    chunk_size=500,
+                    overlap=1
+                )
+
+            for chunk in smaller_chunks:
+                page_chunks.append({
+                    "text": chunk,
+                    "section_heading": heading
+                })
+
+        for chunk_number, chunk in enumerate(
+            page_chunks,
+            start=1
+        ):
+            all_chunks.append({
+                "page_number": page["page_number"],
+                "chunk_number": chunk_number,
+                "text": chunk["text"],
+                "section_heading": chunk["section_heading"]
+            })
+
+    original_chunk_count = len(all_chunks)
+
+    all_chunks = remove_duplicate_chunks(all_chunks)
+
+    print(
+        f"CHUNK DEDUPLICATION: "
+        f"{original_chunk_count} original chunks -> "
+        f"{len(all_chunks)} unique chunks",
+        flush=True
+    )
+
+    return all_chunks, original_chunk_count
+
+
 st.set_page_config(
     page_title="DocuMind",
     page_icon="📄",
@@ -230,75 +318,9 @@ if uploaded_file is not None:
             flush=True
         )
 
-        for page in pages:
-
-            cleaned_text = clean_text(
-                page["text"]
-            )
-
-            if not cleaned_text:
-                continue
-
-            page_chunks = split_text_into_chunks(
-                cleaned_text,
-                chunk_size=1000,
-                overlap=200
-            )
-
-            for chunk_number, chunk_text in enumerate(
-                page_chunks,
-                start=1
-            ):
-                all_chunks.append({
-                    "page_number": page["page_number"],
-                    "chunk_number": chunk_number,
-                    "text": chunk_text,
-                    "section_heading": None
-                })
-
-            sections = split_text_into_sections(
-                cleaned_text
-            )
-
-            page_chunks = []
-
-            for section in sections:
-
-                lines = section.splitlines()
-                heading = None
-
-                if lines and is_section_heading(lines[0]):
-                    heading = lines[0].strip()
-
-                if len(section) <= 1000:
-                    smaller_chunks = [section]
-                else:
-                    smaller_chunks = split_text_by_sentences(
-                        section,
-                        chunk_size=500,
-                        overlap=1
-                    )
-
-                for chunk in smaller_chunks:
-                    page_chunks.append({
-                        "text": chunk,
-                        "section_heading": heading
-                    })
-
-            for chunk_number, chunk in enumerate(
-                page_chunks,
-                start=1
-            ):
-                all_chunks.append({
-                    "page_number": page["page_number"],
-                    "chunk_number": chunk_number,
-                    "text": chunk["text"],
-                    "section_heading": chunk["section_heading"]
-                })
-
-        original_chunk_count = len(all_chunks)
-
-        all_chunks = remove_duplicate_chunks(all_chunks)
+        all_chunks, original_chunk_count = get_processed_chunks(
+            pages
+        )
 
         print(
             f"CHUNK DEDUPLICATION: "
