@@ -4,6 +4,13 @@ import time
 import unicodedata
 
 import streamlit as st
+import hashlib
+
+from database import (
+    initialize_database,
+    prepare_document_fingerprints,
+    save_document_once
+)
 
 from pdf_processor import (
     extract_text_from_pdf,
@@ -65,6 +72,8 @@ st.set_page_config(
     page_icon="📄",
     layout="wide"
 )
+initialize_database()
+prepare_document_fingerprints()
 
 
 @st.cache_resource
@@ -410,6 +419,27 @@ if uploaded_file is not None:
                 embedding_duration = (
                     time.perf_counter() - embedding_start
                 )
+
+
+                pdf_bytes = uploaded_file.getvalue()
+
+                document_fingerprint = hashlib.sha256(
+                    pdf_bytes + selected_ocr_language.encode("utf-8")
+                ).hexdigest()
+
+                document_id = save_document_once(
+                    filename=uploaded_file.name,
+                    page_count=len(pages),
+                    ocr_language=selected_ocr_language,
+                    chunk_count=len(all_chunks),
+                    fingerprint=document_fingerprint
+                )
+
+                print(
+                    f"DATABASE: Document ID {document_id}",
+                    flush=True
+                )
+
 
             st.success(
                 "Semantic search is ready!"
