@@ -489,13 +489,15 @@ if uploaded_file is not None:
         st.exception(error)
 
 
-question_input = st.text_input(
-    "What would you like to know about your document?"
-)
+with st.form("question_form"):
 
-ask_clicked = st.button(
-    "Ask DocuMind"
-)
+    question_input = st.text_input(
+        "What would you like to know about your document?"
+    )
+
+    ask_clicked = st.form_submit_button(
+        "Ask DocuMind"
+    )
 
 
 if ask_clicked:
