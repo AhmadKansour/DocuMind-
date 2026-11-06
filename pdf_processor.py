@@ -1,7 +1,11 @@
 
+
+import threading
+import os
 import pymupdf
 import re
-
+os.environ["TESSDATA_PREFIX"] = r"D:\Tools\tessdata"
+OCR_LOCK = threading.Lock()
 
 
 
@@ -46,19 +50,39 @@ def split_text_by_sentences(text, chunk_size=500, overlap=1):
 
 
 
-def extract_text_from_pdf(uploaded_file):
+
+def extract_text_from_pdf(uploaded_file, progress_callback=None,ocr_language="eng"):
     pages = []
 
     pdf_bytes = uploaded_file.getvalue()
-
     with pymupdf.open(stream=pdf_bytes, filetype="pdf") as document:
 
         metadata = document.metadata or {}
         document_title = (metadata.get("title") or "").strip()
 
         for page_number, page in enumerate(document, start=1):
-            text = page.get_text("text",sort=True)
 
+            # Step 1: Try normal PDF text extraction.
+            text = page.get_text("text", sort=True)
+
+            # Step 2: If the page has no extractable text,
+            # use OCR to recognize text from the page image.
+            if not text.strip():
+
+             with OCR_LOCK:
+                ocr_page = page.get_textpage_ocr(
+                    language=ocr_language,
+                    dpi=200,
+                    full=True
+                )
+
+                text = page.get_text(
+                    "text",
+                    textpage=ocr_page,
+                    sort=False
+                )
+
+            # Step 3: Preserve the existing output structure.
             pages.append({
                 "page_number": page_number,
                 "text": text,
@@ -66,6 +90,7 @@ def extract_text_from_pdf(uploaded_file):
             })
 
     return pages
+
 
 
 

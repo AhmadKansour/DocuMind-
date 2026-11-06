@@ -10,3 +10,7 @@ __pycache__/
 *.db-journal
 *.db-wal
 *.db-shm
+
+*.pdf
+*.txt
+.streamlit/config.toml

@@ -160,16 +160,385 @@ st.set_page_config(
     page_icon="📄",
     layout="wide"
 )
+st.markdown(
+    """
+    <style>
+    /* Main application background */
+    .stApp {
+        background-color: #F5FAFF;
+        color: #17324D;
+    }
+
+    /* Main content */
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 2rem;
+    }
+
+    /* Headings */
+    h1, h2, h3 {
+        color: #17324D;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Primary buttons */
+    button[kind="primary"] {
+        background-color: #0867D8;
+        color: white;
+        border-radius: 10px;
+        border: none;
+    }
+
+    button[kind="primary"]:hover {
+        background-color: #0555B5;
+        color: white;
+    }
+
+    /* Input fields */
+    [data-testid="stTextInput"] input {
+        border-radius: 10px;
+    }
+
+    /* Calm Blue sidebar */
+[data-testid="stSidebar"] {
+    background-color: #EAF4FF;
+    border-right: 1px solid #D5E5F5;
+}
+
+/* Sidebar headings */
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #0867D8;
+}
+
+/* Sidebar text */
+[data-testid="stSidebar"] p {
+    color: #17324D;
+}
+
+/* Sidebar upload area */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] {
+    border-radius: 12px;
+}
+
+
+/* Question input styling */
+[data-testid="stTextInput"] input {
+    background-color: #FFFFFF;
+    color: #17324D;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+/* Form submit button */
+[data-testid="stFormSubmitButton"] button {
+    background-color: #0867D8;
+    color: #FFFFFF;
+    border-radius: 10px;
+    min-height: 44px;
+}
+
+[data-testid="stFormSubmitButton"] button:hover {
+    background-color: #0555B5;
+    color: #FFFFFF;
+}
+
+/* Compact AI answer card */
+.st-key-saved_answer_card {
+    background-color: #FFFFFF;
+    border: 1px solid #D5E5F5;
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-top: 4px;
+}
+
+/* Answer heading */
+.st-key-saved_answer_card h3 {
+    color: #17324D;
+    font-size: 19px;
+    margin-bottom: 12px;
+}
+
+/* Answer text */
+.st-key-saved_answer_card p,
+.st-key-saved_answer_card li {
+    color: #17324D;
+    line-height: 1.6;
+}
+
+
+/* Sidebar conversation-history buttons */
+[data-testid="stSidebar"] .st-key-new_chat_button {
+    margin-bottom: 8px;
+}
+
+/* History buttons: consistent spacing */
+[data-testid="stSidebar"] [class*="st-key-history_"] {
+    margin-bottom: 6px;
+}
+
+/* Unselected history buttons */
+[data-testid="stSidebar"] [class*="st-key-history_"] button[kind="secondary"] {
+    background-color: #FFFFFF;
+    color: #17324D;
+    border: 1px solid #D5E5F5;
+    border-radius: 10px;
+    min-height: 42px;
+    text-align: left;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Hover effect */
+[data-testid="stSidebar"] [class*="st-key-history_"] button[kind="secondary"]:hover {
+    background-color: #F5FAFF;
+    border-color: #0867D8;
+    color: #0867D8;
+}
+
+/* Selected history button */
+[data-testid="stSidebar"] [class*="st-key-history_"] button[kind="primary"] {
+    background-color: #0867D8;
+    color: #FFFFFF;
+    border: 1px solid #0867D8;
+    border-radius: 10px;
+    min-height: 42px;
+    text-align: left;
+}
+
+/* Selected history button hover */
+[data-testid="stSidebar"] [class*="st-key-history_"] button[kind="primary"]:hover {
+    background-color: #0555B5;
+    color: #FFFFFF;
+}
+
+/* History question text */
+[data-testid="stSidebar"] [class*="st-key-history_"] button p {
+    text-align: left;
+    width: 100%;
+    line-height: 1.4;
+}
+
+/* Ensure selected history question text is white */
+[data-testid="stSidebar"] [class*="st-key-history_"] button[kind="primary"] p {
+    color: #FFFFFF !important;
+}
+
+
+/* Supporting passage cards */
+[class*="st-key-saved_passage_"] {
+    background-color: #FFFFFF;
+    border: 1px solid #D5E5F5;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+}
+
+/* Passage headings */
+[class*="st-key-saved_passage_"] strong {
+    color: #0867D8;
+    font-weight: 600;
+}
+
+/* Page number labels */
+[class*="st-key-saved_passage_"] [data-testid="stCaptionContainer"] {
+    background-color: #EAF4FF;
+    border-radius: 6px;
+    padding: 5px 10px;
+    text-align: center;
+    width: fit-content;
+    margin-left: auto;
+}
+
+/* Page label text */
+[class*="st-key-saved_passage_"] [data-testid="stCaptionContainer"] p {
+    color: #0867D8;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Passage body text */
+[class*="st-key-saved_passage_"] [data-testid="stMarkdownContainer"] p {
+    line-height: 1.65;
+}
+
+/* Ask DocuMind button - compact and right aligned */
+[data-testid="stFormSubmitButton"] {
+    display: flex;
+    justify-content: flex-end;
+}
+
+[data-testid="stFormSubmitButton"] button {
+    width: 180px !important;
+    min-width: 180px;
+    max-width: 100%;
+    white-space: nowrap;
+    border: 1px solid #0867D8 !important;
+    box-shadow: none;
+}
+/* Smaller screens */
+@media (max-width: 768px) {
+    [data-testid="stFormSubmitButton"] button {
+        width: 100% !important;
+        min-width: 0;
+    }
+}
+/* Ask button focus styling */
+[data-testid="stFormSubmitButton"] button:focus-visible {
+    outline: 2px solid #86B7F5;
+    outline-offset: 2px;
+}
+/* DocuMind sidebar branding */
+.documind-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.documind-brand-icon {
+     display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0867D8;
+    color: #FFFFFF;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.documind-brand-name {
+    color: #17324D;
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.documind-brand-subtitle {
+    color: #64748B;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Calm Blue PDF uploader */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
+    background-color: #F5FAFF;
+    border: 1px dashed #BFD9F7;
+    border-radius: 14px;
+    padding: 18px 12px;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+/* Highlight the upload area on hover */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] section:hover {
+    background-color: #EAF4FF;
+    border-color: #0867D8;
+}
+
+/* Style the upload button */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
+    background-color: #FFFFFF;
+    color: #0867D8;
+    border: 1px solid #BFD9F7;
+    border-radius: 9px;
+}
+
+/* Style the upload helper text */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] small {
+    color: #64748B;
+}
+
+
+/* Safe Calm Blue uploader styling */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
+    background-color: #F5FAFF;
+    border: 1px dashed #BFD9F7;
+    border-radius: 14px;
+}
+
+/* Upload button appearance */
+[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
+    color: #0867D8;
+    background-color: #FFFFFF;
+    border: 1px solid #BFD9F7;
+    border-radius: 9px;
+}
+
+/* New Chat button styling */
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] {
+    background-color: #0867D8;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 10px;
+    min-height: 44px;
+    font-weight: 600;
+}
+
+/* New Chat button hover */
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover {
+    background-color: #0555B5;
+    color: #FFFFFF !important;
+}
+
+/* Keep button text white */
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"] p {
+    color: #FFFFFF !important;
+}
+
+
+/* Match Streamlit's top header to DocuMind background */
+[data-testid="stHeader"] {
+    background-color: #F5FAFF;
+}
+
+/* Reduce unnecessary space above the main content */
+[data-testid="stMainBlockContainer"] {
+    padding-top: 1.5rem;
+}
+
+
+
+/* Ask DocuMind placeholder */
+input[placeholder="Ask anything about your document..."]::placeholder {
+    color: #475569 !important;
+    opacity: 1 !important;
+    font-weight: 500 !important;
+}
+
+
+
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+initialize_database()
+
 initialize_database()
 prepare_document_fingerprints()
 
 
-@st.cache_resource
+if "chat_histories" not in st.session_state:
+    st.session_state.chat_histories = {}
+
+
+if "selected_chat" not in st.session_state:
+    st.session_state.selected_chat = None
+
+
+if "question_text" not in st.session_state:
+    st.session_state.question_text = ""
+
+if "active_document_key" not in st.session_state:
+    st.session_state.active_document_key = None
+
+
+@st.cache_resource(show_spinner=False)
 def get_embedding_model():
     return load_embedding_model()
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner= False)
 def get_reranker():
     return load_reranker()
 
@@ -237,28 +606,81 @@ def get_document_embeddings(_model, chunk_texts):
     return embeddings
 
 
-st.title("DocuMind")
-
-st.subheader("Your AI Document Assistant")
-
-st.write(
-    "Upload your PDF and ask about its content"
+st.markdown(
+    """
+<div style="margin-bottom: 28px;">
+    <h1 style="color: #0867D8; font-size: 42px; margin-bottom: 5px;">
+         DocuMind
+    </h1>
+    <p style="color: #17324D; font-size: 19px; font-weight: 500;">
+        Your AI Document Assistant
+    </p>
+    <p style="color: #64748B; font-size: 15px;">
+        Upload your PDF, ask questions, and discover answers instantly.
+    </p>
+</div>
+    """,
+    unsafe_allow_html=True
 )
 
-uploaded_file = st.file_uploader(
-    "Upload your PDF",
-    type=["pdf"]
-)
+with st.sidebar:
 
-ocr_language = st.selectbox(
-    "Language of scanned PDF pages",
-    options=["English", "French", "Arabic"],
-    index=0,
-    help=(
-        "Select the main language of scanned pages. "
-        "PDFs with selectable text are extracted normally."
+
+    st.markdown(
+        """
+<div class="documind-brand">
+    <div class="documind-brand-icon">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="25"
+             height="25"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="2"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/>
+            <path d="M14 2v6h6"/>
+            <path d="M14 2l6 6"/>
+            <circle cx="16.5" cy="16.5" r="3.5"/>
+            <path d="m19 19 3 3"/>
+        </svg>
+    </div>
+    <div>
+        <div class="documind-brand-name">DocuMind</div>
+        <div class="documind-brand-subtitle">AI Document Assistant</div>
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True
     )
-)
+
+
+    st.divider()
+
+
+
+
+
+    st.markdown("### Documents")
+
+
+
+    uploaded_file = st.file_uploader(
+        "Upload your PDF",
+        type=["pdf"]
+    )
+
+    ocr_language = st.selectbox(
+        "Language of scanned PDF pages",
+        options=["English", "French", "Arabic"],
+        index=0,
+        help=(
+            "Select the main language of scanned pages. "
+            "PDFs with selectable text are extracted normally."
+        )
+    )
 
 ocr_language_codes = {
     "English": "eng",
@@ -270,6 +692,13 @@ selected_ocr_language = ocr_language_codes[ocr_language]
 
 all_chunks = []
 embeddings = None
+current_document_key = None
+
+if uploaded_file is None and st.session_state.active_document_key is not None:
+    st.session_state.active_document_key = None
+    st.session_state.selected_chat = None
+    st.session_state.question_text = ""
+    st.rerun()
 
 
 if uploaded_file is not None:
@@ -400,18 +829,13 @@ if uploaded_file is not None:
             flush=True
         )
 
-        st.success(
-            f"Successfully processed {len(pages)} pages!"
-        )
+        print(
+    f"PDF PROCESSING TIME: {processing_duration:.2f}s",
+    flush=True
+)
 
-        st.info(
-            f"Created {len(all_chunks)} text chunks."
-        )
 
-        st.write(
-            f"PDF extraction and chunking time: "
-            f"{processing_duration:.2f} seconds"
-        )
+
 
         if all_chunks:
 
@@ -448,6 +872,16 @@ if uploaded_file is not None:
                 document_fingerprint = hashlib.sha256(
                     pdf_bytes + selected_ocr_language.encode("utf-8")
                 ).hexdigest()
+                current_document_key = document_fingerprint
+
+
+                if st.session_state.active_document_key != current_document_key:
+                    st.session_state.active_document_key = current_document_key
+                    st.session_state.selected_chat = None
+                    st.session_state.question_text = ""
+
+                if current_document_key not in st.session_state.chat_histories:
+                    st.session_state.chat_histories[current_document_key] = []
 
                 document_id = save_document_once(
                     filename=uploaded_file.name,
@@ -463,18 +897,40 @@ if uploaded_file is not None:
                 )
 
 
-            st.success(
-                "Semantic search is ready!"
+            print(
+            f"MODEL LOADING TIME: {model_duration:.2f}s",
+            flush=True
+        )
+
+
+
+
+            print(
+                f"EMBEDDING TIME: {embedding_duration:.2f}s",
+                flush=True
             )
 
-            st.write(
-                f"Model loading time: "
-                f"{model_duration:.2f} seconds"
-            )
-
-            st.write(
-                f"Embedding creation time: "
-                f"{embedding_duration:.2f} seconds"
+            st.markdown(
+                f"""
+            <div style="
+                background-color: #FFFFFF;
+                border: 1px solid #D5E5F5;
+                border-radius: 14px;
+                padding: 18px;
+                margin: 18px 0;
+            ">
+                <div style="color: #17324D; font-size: 17px; font-weight: 600;">
+                    📄 {uploaded_file.name}
+                </div>
+                <div style="color: #64748B; font-size: 14px; margin-top: 6px;">
+                    {len(pages)} pages · Ready for questions
+                </div>
+                <div style="color: #16803C; font-size: 13px; margin-top: 8px;">
+                    ✓ Document ready
+                </div>
+            </div>
+                """,
+                unsafe_allow_html=True
             )
 
         else:
@@ -489,18 +945,196 @@ if uploaded_file is not None:
         st.exception(error)
 
 
-with st.form("question_form"):
+st.subheader(
+    "Ask DocuMind",
+    anchor="ask-documind"
+)
+
+# --------------------------------------------------
+# SIDEBAR: NEW CHAT AND QUESTION HISTORY
+# --------------------------------------------------
+
+
+with st.sidebar:
+
+    if st.button(
+        "+ New Chat",
+        key="new_chat_button",
+        use_container_width=True,
+        type="primary"
+    ):
+        st.session_state.selected_chat = None
+        st.session_state.question_text = ""
+        st.rerun()
+
+
+    st.divider()
+
+    st.markdown("### Question History")
+
+
+    if current_document_key is not None:
+
+        # Get the history for the currently uploaded PDF
+        document_history = st.session_state.chat_histories.get(
+            current_document_key,
+            []
+        )
+
+        if document_history:
+
+            # Display newest questions first
+            for index in range(len(document_history) - 1, -1, -1):
+
+                entry = document_history[index]
+
+                # Shorten long questions
+                question_preview = entry["question"]
+
+                if len(question_preview) > 45:
+                    question_preview = question_preview[:42].rstrip() + "..."
+
+                # Highlight the selected question
+                is_selected = (
+                    st.session_state.selected_chat
+                    == (current_document_key, index)
+                )
+
+                if st.button(
+                    f"{index + 1}. {question_preview}",
+                    key=f"history_{current_document_key}_{index}",
+                    use_container_width=True,
+                    type="primary" if is_selected else "secondary",
+                    help=entry["question"]
+                ):
+                    st.session_state.selected_chat = (
+                        current_document_key,
+                        index
+                    )
+
+                    st.session_state.question_text = entry["question"]
+                    st.rerun()
+
+        else:
+            st.caption("No questions asked yet.")
+
+    else:
+        st.caption("Upload a PDF to view its question history.")
+
+
+# --------------------------------------------------
+# QUESTION INPUT FORM
+# --------------------------------------------------
+
+with st.form("question_form", border=False):
 
     question_input = st.text_input(
-        "What would you like to know about your document?"
+        "Your question",
+        placeholder="Ask anything about your document...",
+        label_visibility="collapsed",
+        key="question_text"
     )
 
-    ask_clicked = st.form_submit_button(
-        "Ask DocuMind"
-    )
+    left_space, right_button = st.columns([3, 2])
 
+    with right_button:
+        ask_clicked = st.form_submit_button(
+            "Ask DocuMind",
+            type="primary",
+            use_container_width=True
+        )
+
+
+
+
+
+
+
+# --------------------------------------------------
+# DISPLAY A SAVED ANSWER
+# --------------------------------------------------
+
+if not ask_clicked and current_document_key is not None:
+
+    selected_chat = st.session_state.selected_chat
+
+    if (
+        selected_chat is not None
+        and selected_chat[0] == current_document_key
+    ):
+
+        selected_index = selected_chat[1]
+
+        history = st.session_state.chat_histories.get(
+            current_document_key,
+            []
+        )
+
+        if 0 <= selected_index < len(history):
+
+
+
+            selected_entry = history[selected_index]
+
+            # Display the user's selected question as a heading
+            with st.container(key="user_question_heading"):
+                st.caption("YOUR QUESTION")
+                st.markdown(f"#### {selected_entry['question']}")
+
+            # Display the saved AI answer
+            with st.container(key="saved_answer_card"):
+                st.markdown("### DocuMind AI Answer")
+                st.markdown(selected_entry["answer"])
+
+
+
+
+
+
+            if selected_entry["answer_found"]:
+
+                with st.expander(
+                    "View supporting passages",
+                    expanded=False
+                ):
+
+                    for passage_number, passage in enumerate(
+                        selected_entry["passages"],
+                        start=1
+                    ):
+
+                        with st.container(
+                            key=f"saved_passage_{passage_number}",
+                            border=True
+                        ):
+
+                            left_column, right_column = st.columns(
+                                [4, 1],
+                                vertical_alignment="center"
+                            )
+
+                            with left_column:
+                                st.markdown(
+                                    f"**Passage {passage_number}**"
+                                )
+
+                            with right_column:
+                                st.caption(
+                                    f"Page {passage['page_number']}"
+                                )
+
+                            st.write(passage["text"])
+
+
+
+# --------------------------------------------------
+# PROCESS A NEW QUESTION
+# --------------------------------------------------
 
 if ask_clicked:
+
+    # Clear the previously selected answer
+    st.session_state.selected_chat = None
 
     print(
         f"ASK CLICKED | question={question_input!r}",
@@ -508,27 +1142,69 @@ if ask_clicked:
     )
 
     if uploaded_file is None:
-        st.warning(
-            "Please upload a PDF."
-        )
+
+        st.warning("Please upload a PDF.")
 
     elif not question_input.strip():
-        st.warning(
-            "Please enter a question."
-        )
+
+        st.warning("Please enter a question.")
+
 
     elif embeddings is None:
+
         st.warning(
             "Semantic search is not ready. "
             "Please check your PDF."
         )
 
+    elif current_document_key is not None and any(
+        " ".join(entry["question"].split()).casefold()
+        == " ".join(question_input.split()).casefold()
+        for entry in st.session_state.chat_histories.get(
+            current_document_key, []
+        )
+    ):
+
+        # Find the existing question in this PDF's history
+        history = st.session_state.chat_histories[current_document_key]
+
+        normalized_question = " ".join(
+            question_input.split()
+        ).casefold()
+
+        for index, entry in enumerate(history):
+
+            saved_question = " ".join(
+                entry["question"].split()
+            ).casefold()
+
+            if saved_question == normalized_question:
+
+                # Select the previously saved answer
+
+                # Select the previously saved answer
+                st.session_state.selected_chat = (
+                    current_document_key,
+                    index
+                )
+
+                # Display the saved answer without calling Gemini
+                st.rerun()
+
+
     else:
+
         question_start = time.perf_counter()
 
-        with st.spinner(
-            "Searching your document..."
-        ):
+        # ------------------------------------------
+        # DOCUMENT RETRIEVAL
+        # ------------------------------------------
+
+        with st.status(
+            "Searching your document...",
+            expanded=True
+) as answer_status:
+
             model = get_embedding_model()
 
             search_start = time.perf_counter()
@@ -547,6 +1223,7 @@ if ask_clicked:
                 flush=True
             )
 
+            # Keyword search
             stop_words = {
                 "de", "la", "le", "les",
                 "des", "du", "est", "quelle"
@@ -569,6 +1246,7 @@ if ask_clicked:
                 )
 
                 if matching_words:
+
                     keyword_results.append({
                         "chunk_index": index,
                         "page_number": chunk["page_number"],
@@ -588,6 +1266,7 @@ if ask_clicked:
             )
 
             for result in keyword_results[:5]:
+
                 print(
                     f"Page {result['page_number']} | "
                     f"Score {result['score']} | "
@@ -595,12 +1274,17 @@ if ask_clicked:
                     flush=True
                 )
 
+            # --------------------------------------
+            # COMBINE SEMANTIC AND KEYWORD RESULTS
+            # --------------------------------------
+
             combined_results = []
             seen_chunks = set()
 
             for result in (
                 keyword_results[:10] + semantic_results
             ):
+
                 chunk_index = result["chunk_index"]
 
                 if chunk_index not in seen_chunks:
@@ -614,6 +1298,10 @@ if ask_clicked:
                 f"{len(combined_results)} unique candidates",
                 flush=True
             )
+
+            # --------------------------------------
+            # RERANKING
+            # --------------------------------------
 
             load_start = time.perf_counter()
 
@@ -646,6 +1334,10 @@ if ask_clicked:
                 flush=True
             )
 
+            # --------------------------------------
+            # PREPARE RAG CONTEXT
+            # --------------------------------------
+
             rag_context = prepare_rag_context(
                 reranked_passages,
                 max_passages=5
@@ -657,16 +1349,25 @@ if ask_clicked:
                 flush=True
             )
 
+        answer_status.update(
+            label="Generating your AI answer...",
+            state="running",
+            expanded=True
+        )
+
+        # ------------------------------------------
+        # GENERATE AI ANSWER
+        # ------------------------------------------
+
         if not rag_context.strip():
-            st.info(
-                "No relevant passages were found."
-            )
+
+            st.info("No relevant passages were found.")
 
         else:
-            with st.spinner(
-                "Generating AI answer..."
-            ):
+
+            if True:
                 try:
+
                     print(
                         "GEMINI CALL STARTED",
                         flush=True
@@ -674,11 +1375,17 @@ if ask_clicked:
 
                     gemini_start = time.perf_counter()
 
-                    ai_answer = generate_answer(
+                    ai_answer, answer_found = generate_answer(
                         question_input,
                         rag_context
                     )
+                    answer_status.update(
+                        label="Answer generated successfully",
+                        state="complete",
+                        expanded=False
+                    )
 
+                    # Measure performance before rerunning
                     gemini_duration = (
                         time.perf_counter() - gemini_start
                     )
@@ -699,15 +1406,69 @@ if ask_clicked:
                         flush=True
                     )
 
-                    st.subheader(
-                        "DocuMind AI Answer"
-                    )
+                    # ----------------------------------
+                    # SAVE ANSWER TO CONVERSATION HISTORY
+                    # ----------------------------------
 
-                    st.write(
-                        ai_answer
-                    )
+                    if current_document_key is not None:
+
+                        st.session_state.chat_histories[
+                            current_document_key
+                        ].append({
+                            "question": question_input.strip(),
+                            "answer": ai_answer,
+                            "answer_found": answer_found,
+                            "passages": [
+                                passage.copy()
+                                for passage in reranked_passages
+                            ]
+                        })
+
+
+                        st.session_state.selected_chat = (
+                            current_document_key,
+                            len(
+                                st.session_state.chat_histories[
+                                    current_document_key
+                                ]
+                            ) - 1
+                        )
+
+
+                        st.rerun()
+
+                    else:
+
+                        with st.container(key="ai_answer_card"):
+                            st.markdown("### DocuMind AI Answer")
+                            st.markdown(ai_answer)
+
+                        if answer_found:
+
+                            with st.expander(
+                                "View supporting passages",
+                                expanded=False
+                            ):
+
+                                for passage in reranked_passages:
+
+                                    st.markdown(
+                                        f"**Page {passage['page_number']}**"
+                                    )
+                                    st.write(passage["text"])
+                                    st.divider()
+
+                # ----------------------------------
+                # GEMINI ERROR HANDLING
+                # ----------------------------------
 
                 except Exception as error:
+                    answer_status.update(
+                        label="Unable to generate an answer",
+                        state="error",
+                        expanded=False
+                    )
+
                     error_code = getattr(
                         error,
                         "code",
@@ -722,18 +1483,21 @@ if ask_clicked:
                     )
 
                     if error_code in (503, 504):
+
                         st.warning(
                             "The AI service is temporarily "
                             "unavailable. Please try again later."
                         )
 
                     elif error_code == 429:
+
                         st.warning(
                             "The AI service has reached its "
                             "usage limit. Please try again later."
                         )
 
                     else:
+
                         st.error(
                             "AI answer generation failed."
                         )
@@ -742,17 +1506,3 @@ if ask_clicked:
                             f"Gemini error: {error}",
                             flush=True
                         )
-
-            with st.expander(
-                "View supporting passages"
-            ):
-                for passage in reranked_passages:
-                    st.markdown(
-                        f"**Page {passage['page_number']}**"
-                    )
-
-                    st.write(
-                        passage["text"]
-                    )
-
-                    st.divider()
