@@ -4,12 +4,16 @@ import time
 import unicodedata
 
 import streamlit as st
+import extra_streamlit_components as stx
+import uuid
 import hashlib
 
 from database import (
     initialize_database,
     prepare_document_fingerprints,
-    save_document_once
+    save_document_once,
+    get_daily_question_count,
+    use_ai_request,
 )
 
 from pdf_processor import (
@@ -66,8 +70,7 @@ def remove_duplicate_chunks(chunks):
 
     return unique_chunks
 
-
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, scope="session")
 def get_processed_chunks(pages):
 
     print(
@@ -160,6 +163,25 @@ st.set_page_config(
     page_icon="📄",
     layout="wide"
 )
+cookie_manager = stx.CookieManager(key="documind_cookie_manager")
+
+visitor_id = (
+    st.context.cookies.get("documind_visitor_id")
+    or cookie_manager.get("documind_visitor_id")
+)
+
+if visitor_id is None:
+    if "pending_visitor_id" not in st.session_state:
+        st.session_state.pending_visitor_id = str(uuid.uuid4())
+
+    cookie_manager.set(
+        "documind_visitor_id",
+        st.session_state.pending_visitor_id,
+        key="documind_visitor_cookie"
+    )
+
+
+
 st.markdown(
     """
     <style>
@@ -518,6 +540,15 @@ initialize_database()
 prepare_document_fingerprints()
 
 
+
+if visitor_id is not None:
+    questions_used = get_daily_question_count(visitor_id)
+    questions_remaining = max(0, 10 - questions_used)
+
+    st.sidebar.caption(
+        f"AI questions remaining today: {questions_remaining}/10"
+    )
+
 if "chat_histories" not in st.session_state:
     st.session_state.chat_histories = {}
 
@@ -543,7 +574,7 @@ def get_reranker():
     return load_reranker()
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, scope="session")
 def get_extracted_pages(pdf_bytes, ocr_language):
 
     class PDFUpload:
@@ -575,7 +606,7 @@ def get_extracted_pages(pdf_bytes, ocr_language):
     return pages
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, scope="session")
 def get_document_embeddings(_model, chunk_texts):
 
     print(
@@ -704,6 +735,12 @@ if uploaded_file is None and st.session_state.active_document_key is not None:
 if uploaded_file is not None:
 
     try:
+        pdf_bytes = uploaded_file.getvalue()
+
+        if len(pdf_bytes) > 10 * 1024 * 1024:
+            st.error("The PDF exceeds the 10 MB upload limit.")
+            st.stop()
+
         processing_start = time.perf_counter()
         extraction_start = time.perf_counter()
 
@@ -730,11 +767,6 @@ if uploaded_file is not None:
             flush=True
         )
 
-        print(
-            "Filename:",
-            uploaded_file.name,
-            flush=True
-        )
 
         print(
             "Pages extracted:",
@@ -788,20 +820,6 @@ if uploaded_file is not None:
             for chunk in all_chunks
         }
 
-        print(
-            "\n--- FRENCH AVERAGE DIAGNOSTIC ---",
-            flush=True
-        )
-
-        for chunk in all_chunks:
-            if "57.75" in chunk["text"]:
-                print(
-                    f"FOUND 57.75 | "
-                    f"Page: {chunk['page_number']} | "
-                    f"Chunk: {chunk['chunk_number']} | "
-                    f"Text: {chunk['text']}",
-                    flush=True
-                )
 
         print(
             f"TOTAL CHUNKS: {len(all_chunks)}",
@@ -884,7 +902,7 @@ if uploaded_file is not None:
                     st.session_state.chat_histories[current_document_key] = []
 
                 document_id = save_document_once(
-                    filename=uploaded_file.name,
+                    filename="Private document",
                     page_count=len(pages),
                     ocr_language=selected_ocr_language,
                     chunk_count=len(all_chunks),
@@ -938,11 +956,10 @@ if uploaded_file is not None:
                 "No readable text was extracted from this PDF."
             )
 
-    except Exception as error:
+    except Exception:
         st.error(
-            "Unable to process this PDF."
-        )
-        st.exception(error)
+        "Unable to process this PDF. Please check the file and try again."
+    )
 
 
 st.subheader(
@@ -1136,11 +1153,6 @@ if ask_clicked:
     # Clear the previously selected answer
     st.session_state.selected_chat = None
 
-    print(
-        f"ASK CLICKED | question={question_input!r}",
-        flush=True
-    )
-
     if uploaded_file is None:
 
         st.warning("Please upload a PDF.")
@@ -1260,20 +1272,6 @@ if ask_clicked:
                 reverse=True
             )
 
-            print(
-                "\n--- TOP KEYWORD RESULTS ---",
-                flush=True
-            )
-
-            for result in keyword_results[:5]:
-
-                print(
-                    f"Page {result['page_number']} | "
-                    f"Score {result['score']} | "
-                    f"{result['text'][:150]!r}",
-                    flush=True
-                )
-
             # --------------------------------------
             # COMBINE SEMANTIC AND KEYWORD RESULTS
             # --------------------------------------
@@ -1355,17 +1353,53 @@ if ask_clicked:
             expanded=True
         )
 
-        # ------------------------------------------
-        # GENERATE AI ANSWER
-        # ------------------------------------------
 
         if not rag_context.strip():
 
             st.info("No relevant passages were found.")
 
         else:
+            quota_result = None
 
-            if True:
+            if visitor_id is not None:
+                quota_result = use_ai_request(
+                    visitor_id,
+                    visitor_limit=10,
+                    global_limit=100
+                )
+
+
+            if visitor_id is None:
+                answer_status.update(
+                    label="Visitor session not ready",
+                    state="complete",
+                    expanded=False
+                )
+                st.warning("Preparing your visitor session. Please try again.")
+
+            elif quota_result == "global_limit":
+                answer_status.update(
+                    label="Global AI request limit reached",
+                    state="complete",
+                    expanded=False
+                )
+                st.warning(
+                    "DocuMind has reached its daily AI request limit. "
+                    "Please come back tomorrow."
+                )
+
+            elif quota_result == "visitor_limit":
+                answer_status.update(
+                    label="Daily question limit reached",
+                    state="complete",
+                    expanded=False
+                )
+                st.warning(
+                    "You've reached your daily limit of 10 AI questions. "
+                    "Please come back tomorrow."
+                )
+
+            else:
                 try:
 
                     print(

@@ -1,6 +1,7 @@
 
 import sqlite3
 from pathlib import Path
+from datetime import datetime, timezone
 
 DATABASE_PATH = Path(__file__).resolve().parent / "documind.db"
 
@@ -23,6 +24,24 @@ def initialize_database():
             )
             """
         )
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daily_usage (
+                visitor_id TEXT NOT NULL,
+                usage_date TEXT NOT NULL,
+                question_count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (visitor_id, usage_date)
+            )
+            """
+        )
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS global_daily_usage (
+                usage_date TEXT PRIMARY KEY,
+                request_count INTEGER NOT NULL DEFAULT 0
+            )
+        """)
         connection.commit()
 
 
@@ -123,6 +142,158 @@ def save_document_once(
 
         return document[0]
 
+
+
+
+def get_daily_question_count(visitor_id):
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with get_connection() as connection:
+        result = connection.execute(
+            """
+            SELECT question_count
+            FROM daily_usage
+            WHERE visitor_id = ? AND usage_date = ?
+            """,
+            (visitor_id, today)
+        ).fetchone()
+
+        return result[0] if result else 0
+
+
+def use_daily_question(visitor_id, daily_limit=10):
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with get_connection() as connection:
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO daily_usage (
+                visitor_id, usage_date, question_count
+            )
+            VALUES (?, ?, 0)
+            """,
+            (visitor_id, today)
+        )
+
+        cursor = connection.execute(
+            """
+            UPDATE daily_usage
+            SET question_count = question_count + 1
+            WHERE visitor_id = ?
+              AND usage_date = ?
+              AND question_count < ?
+            """,
+            (visitor_id, today, daily_limit)
+        )
+
+        return cursor.rowcount == 1
+
+
+def use_global_daily_request(daily_limit=100):
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with get_connection() as connection:
+        connection.execute(
+            """
+            INSERT OR IGNORE INTO global_daily_usage
+                (usage_date, request_count)
+            VALUES (?, 0)
+            """,
+            (today,)
+        )
+
+        result = connection.execute(
+            """
+            UPDATE global_daily_usage
+            SET request_count = request_count + 1
+            WHERE usage_date = ?
+              AND request_count < ?
+            """,
+            (today, daily_limit)
+        )
+
+        connection.commit()
+
+        return result.rowcount == 1
+
+def use_ai_request(visitor_id, visitor_limit=10, global_limit=100):
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with get_connection() as connection:
+        connection.execute("BEGIN IMMEDIATE")
+
+        visitor_row = connection.execute(
+            """
+            SELECT question_count
+            FROM daily_usage
+            WHERE visitor_id = ? AND usage_date = ?
+            """,
+            (visitor_id, today)
+        ).fetchone()
+
+        global_row = connection.execute(
+            """
+            SELECT request_count
+            FROM global_daily_usage
+            WHERE usage_date = ?
+            """,
+            (today,)
+        ).fetchone()
+
+        visitor_count = visitor_row[0] if visitor_row else 0
+        global_count = global_row[0] if global_row else 0
+
+        if visitor_count >= visitor_limit:
+            return "visitor_limit"
+
+        if global_count >= global_limit:
+            return "global_limit"
+
+        connection.execute(
+            """
+            INSERT INTO daily_usage
+                (visitor_id, usage_date, question_count)
+            VALUES (?, ?, 1)
+            ON CONFLICT(visitor_id, usage_date)
+            DO UPDATE SET question_count = question_count + 1
+            """,
+            (visitor_id, today)
+        )
+
+        connection.execute(
+            """
+            INSERT INTO global_daily_usage
+                (usage_date, request_count)
+            VALUES (?, 1)
+            ON CONFLICT(usage_date)
+            DO UPDATE SET request_count = request_count + 1
+            """,
+            (today,)
+        )
+
+        connection.commit()
+        return "allowed"
+
+def get_global_daily_request_count():
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    with get_connection() as connection:
+        result = connection.execute(
+            """
+            SELECT request_count
+            FROM global_daily_usage
+            WHERE usage_date = ?
+            """,
+            (today,)
+        ).fetchone()
+
+        return result[0] if result else 0
 
 
 if __name__ == "__main__":
