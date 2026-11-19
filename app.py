@@ -2,6 +2,9 @@
 import re
 import time
 import unicodedata
+import hmac
+import secrets
+import html
 
 import streamlit as st
 import extra_streamlit_components as stx
@@ -158,27 +161,92 @@ def get_processed_chunks(pages):
     return all_chunks, original_chunk_count
 
 
+def sign_visitor_id(visitor_id):
+    """
+    Create a signed cookie value for a visitor ID.
+    """
+    signing_key = st.secrets["VISITOR_SIGNING_KEY"].encode("utf-8")
+
+    signature = hmac.new(
+        signing_key,
+        visitor_id.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
+    return f"{visitor_id}.{signature}"
+
+
+def verify_visitor_cookie(cookie_value):
+    """
+    Return the visitor ID if the cookie is valid.
+    Otherwise, return None.
+    """
+    if not isinstance(cookie_value, str):
+        return None
+
+    try:
+        visitor_id, signature = cookie_value.rsplit(".", 1)
+
+        # Only accept properly formatted UUIDs.
+        parsed_id = uuid.UUID(visitor_id)
+
+        if str(parsed_id) != visitor_id:
+            return None
+
+        expected_signature = sign_visitor_id(visitor_id)
+
+        # Compare signatures without timing-based information leakage.
+        if secrets.compare_digest(
+            cookie_value,
+            expected_signature
+        ):
+            return visitor_id
+
+    except (ValueError, TypeError):
+        return None
+
+    return None
+
+
 st.set_page_config(
     page_title="DocuMind",
     page_icon="📄",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="auto",
 )
+
+
+
 cookie_manager = stx.CookieManager(key="documind_cookie_manager")
 
-visitor_id = (
-    st.context.cookies.get("documind_visitor_id")
-    or cookie_manager.get("documind_visitor_id")
+COOKIE_NAME = "documind_visitor_id"
+
+# Retrieve the visitor's cookie.
+cookie_value = (
+    st.context.cookies.get(COOKIE_NAME)
+    or cookie_manager.get(COOKIE_NAME)
 )
 
+# Only accept visitor IDs with valid signatures.
+visitor_id = verify_visitor_cookie(cookie_value)
+
 if visitor_id is None:
+    # Reuse the pending ID across Streamlit reruns.
     if "pending_visitor_id" not in st.session_state:
         st.session_state.pending_visitor_id = str(uuid.uuid4())
 
+    visitor_id = st.session_state.pending_visitor_id
+
+    # Store the signed value, not the plain UUID.
     cookie_manager.set(
-        "documind_visitor_id",
-        st.session_state.pending_visitor_id,
-        key="documind_visitor_cookie"
+        COOKIE_NAME,
+        sign_visitor_id(visitor_id),
+        key="documind_visitor_cookie",
     )
+
+else:
+    # The existing cookie has been verified.
+    st.session_state.pop("pending_visitor_id", None)
 
 
 
@@ -249,6 +317,12 @@ st.markdown(
     color: #17324D;
     border-radius: 10px;
     padding: 12px 14px;
+}
+/* Prevent Safari from zooming when focusing inputs on iPhone */
+@media (max-width: 768px) {
+    [data-testid="stTextInput"] input {
+        font-size: 16px !important;
+    }
 }
 
 /* Form submit button */
@@ -512,11 +586,97 @@ st.markdown(
     background-color: #F5FAFF;
 }
 
+
 /* Reduce unnecessary space above the main content */
 [data-testid="stMainBlockContainer"] {
     padding-top: 1.5rem;
 }
+/* Make sidebar open and close controls clearly visible */
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapseButton"] {
+    color: #0867D8 !important;
+    background-color: #EAF4FF !important;
+    border-radius: 8px !important;
+}
 
+/* Streamlit uses Material Symbols for sidebar arrows */
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"] {
+    color: #0867D8 !important;
+    opacity: 1 !important;
+}
+
+/* Ensure Streamlit warning messages have readable text */
+[data-testid="stAlert"][data-baseweb="notification"] {
+    color: #664D03 !important;
+}
+
+/* DocuMind status and expander containers */
+[data-testid="stStatusWidget"],
+[data-testid="stExpander"] {
+    background-color: #FFFFFF !important;
+    color: #17324D !important;
+    border: 1px solid #D5E5F5 !important;
+    border-radius: 12px !important;
+}
+
+/* Status and expander labels */
+[data-testid="stStatusWidget"] summary,
+[data-testid="stExpander"] summary,
+[data-testid="stStatusWidget"] p,
+[data-testid="stExpander"] p {
+    color: #17324D !important;
+}
+
+/* Icons and arrows */
+[data-testid="stStatusWidget"] svg,
+[data-testid="stExpander"] svg {
+    color: #0867D8 !important;
+}
+
+/* AI processing status container */
+[data-testid="stStatusWidget"],
+[data-testid="stStatusWidget"] details,
+[data-testid="stStatusWidget"] summary,
+[data-testid="stStatusWidget"] [data-testid="stExpanderDetails"] {
+    background-color: #FFFFFF !important;
+    color: #17324D !important;
+}
+
+/* Streamlit status messages may use an expander */
+[data-testid="stExpander"]:has([data-testid="stStatusWidget"]) {
+    background-color: #FFFFFF !important;
+}
+
+/* Status labels and icons */
+[data-testid="stStatusWidget"] span,
+[data-testid="stStatusWidget"] p,
+[data-testid="stStatusWidget"] svg {
+    color: #17324D !important;
+}
+
+/* Fix AI processing status header */
+[data-testid="stExpander"] summary {
+    background-color: #FFFFFF !important;
+    color: #17324D !important;
+}
+
+
+
+
+/* Keep status text and icons visible*/
+
+[data-testid="stExpander"] summary *,
+[data-testid="stExpander"] summary svg {
+    color: #17324D !important;
+    opacity: 1 !important;
+}
+
+
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
+    color: #664D03 !important;
+}
 
 
 /* Ask DocuMind placeholder */
@@ -526,15 +686,20 @@ input[placeholder="Ask anything about your document..."]::placeholder {
     font-weight: 500 !important;
 }
 
-
+/* Compact question heading on mobile */
+@media (max-width: 768px) {
+    .st-key-user_question_heading h4 {
+        font-size: 18px !important;
+        line-height: 1.4 !important;
+        overflow-wrap: break-word;
+    }
+}
 
 
     </style>
     """,
     unsafe_allow_html=True
 )
-
-initialize_database()
 
 initialize_database()
 prepare_document_fingerprints()
@@ -938,7 +1103,7 @@ if uploaded_file is not None:
                 margin: 18px 0;
             ">
                 <div style="color: #17324D; font-size: 17px; font-weight: 600;">
-                    📄 {uploaded_file.name}
+                    📄 {html.escape(uploaded_file.name)}
                 </div>
                 <div style="color: #64748B; font-size: 14px; margin-top: 6px;">
                     {len(pages)} pages · Ready for questions
@@ -956,9 +1121,10 @@ if uploaded_file is not None:
                 "No readable text was extracted from this PDF."
             )
 
+
     except Exception:
         st.error(
-        "Unable to process this PDF. Please check the file and try again."
+            "Unable to process this PDF. Please check the file and try again."
     )
 
 

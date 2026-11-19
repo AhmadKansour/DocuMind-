@@ -4,7 +4,8 @@ import threading
 import os
 import pymupdf
 import re
-os.environ["TESSDATA_PREFIX"] = r"D:\Tools\tessdata"
+if os.name == "nt":
+    os.environ["TESSDATA_PREFIX"] = r"D:\Tools\tessdata"
 OCR_LOCK = threading.Lock()
 
 

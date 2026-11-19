@@ -1,9 +1,47 @@
 
 import sqlite3
+import os
+import psycopg
 from pathlib import Path
 from datetime import datetime, timezone
 
 DATABASE_PATH = Path(__file__).resolve().parent / "documind.db"
+
+
+def get_database_backend():
+    """
+    Return the configured database backend.
+
+    Defaults to SQLite for local development.
+    """
+    import streamlit as st
+
+    backend = st.secrets.get("database_backend", "sqlite")
+
+    if backend not in ("sqlite", "postgres"):
+        raise ValueError(
+            "Invalid database_backend. "
+            "Expected 'sqlite' or 'postgres'."
+        )
+
+    return backend
+
+
+
+def get_postgres_connection():
+    import streamlit as st
+
+    config = st.secrets["postgres"]
+
+    return psycopg.connect(
+        host=config["host"],
+        port=config["port"],
+        dbname=config["dbname"],
+        user=config["user"],
+        password=config["password"],
+        sslmode=config["sslmode"],
+        connect_timeout=10
+    )
 
 
 def get_connection():
@@ -11,6 +49,12 @@ def get_connection():
 
 
 def initialize_database():
+
+    if get_database_backend() == "postgres":
+        # PostgreSQL tables were already created
+        # in Supabase during database setup.
+        return
+
     with get_connection() as connection:
         connection.execute(
             """
@@ -86,6 +130,12 @@ def get_all_documents():
 
 
 def prepare_document_fingerprints():
+
+    if get_database_backend() == "postgres":
+        # PostgreSQL already has the fingerprint column
+        # and its UNIQUE constraint in Supabase.
+        return
+
     with get_connection() as connection:
         columns = connection.execute(
             "PRAGMA table_info(documents)"
@@ -114,6 +164,16 @@ def save_document_once(
     chunk_count,
     fingerprint
 ):
+
+    if get_database_backend() == "postgres":
+        return save_document_once_postgres(
+            filename=filename,
+            page_count=page_count,
+            ocr_language=ocr_language,
+            chunk_count=chunk_count,
+            fingerprint=fingerprint
+        )
+
     with get_connection() as connection:
         connection.execute(
             """
@@ -145,7 +205,46 @@ def save_document_once(
 
 
 
+def save_document_once_postgres(
+    filename,
+    page_count,
+    ocr_language,
+    chunk_count,
+    fingerprint
+):
+    """
+    Save document metadata through a restricted
+    PostgreSQL function.
+
+    Return the existing ID if the document's
+    fingerprint already exists.
+    """
+
+    with get_postgres_connection() as connection:
+        result = connection.execute(
+            """
+            SELECT public.save_document_metadata(
+                %s, %s, %s, %s, %s
+            )
+            """,
+            (
+                filename,
+                page_count,
+                ocr_language,
+                chunk_count,
+                fingerprint
+            )
+        ).fetchone()
+
+        return result[0]
+
+
+
 def get_daily_question_count(visitor_id):
+
+    if get_database_backend() == "postgres":
+        return get_daily_question_count_postgres(visitor_id)
+
     today = datetime.now(timezone.utc).date().isoformat()
 
     with get_connection() as connection:
@@ -159,6 +258,29 @@ def get_daily_question_count(visitor_id):
         ).fetchone()
 
         return result[0] if result else 0
+
+
+
+
+def get_daily_question_count_postgres(visitor_id):
+    """
+    Retrieve today's question count using the
+    restricted PostgreSQL function.
+    """
+
+    today = datetime.now(timezone.utc).date()
+
+    with get_postgres_connection() as connection:
+        result = connection.execute(
+            """
+            SELECT public.get_visitor_daily_count(
+                %s, %s
+            )
+            """,
+            (visitor_id, today)
+        ).fetchone()
+
+        return result[0]
 
 
 def use_daily_question(visitor_id, daily_limit=10):
@@ -219,6 +341,14 @@ def use_global_daily_request(daily_limit=100):
         return result.rowcount == 1
 
 def use_ai_request(visitor_id, visitor_limit=10, global_limit=100):
+
+    if get_database_backend() == "postgres":
+        return use_ai_request_postgres(
+            visitor_id,
+            visitor_limit=visitor_limit,
+            global_limit=global_limit
+        )
+
     from datetime import datetime, timezone
 
     today = datetime.now(timezone.utc).date().isoformat()
@@ -294,6 +424,33 @@ def get_global_daily_request_count():
         ).fetchone()
 
         return result[0] if result else 0
+
+
+def use_ai_request_postgres(
+    visitor_id,
+    visitor_limit=10,
+    global_limit=100
+):
+    """
+    Atomically enforce visitor and global AI quotas
+    using the restricted PostgreSQL function.
+    """
+
+    with get_postgres_connection() as connection:
+        result = connection.execute(
+            """
+            SELECT public.use_ai_request(
+                %s, %s, %s
+            )
+            """,
+            (
+                visitor_id,
+                visitor_limit,
+                global_limit
+            )
+        ).fetchone()
+
+        return result[0]
 
 
 if __name__ == "__main__":

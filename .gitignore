@@ -5,6 +5,7 @@ __pycache__/
 .env.*
 !.env.example
 .streamlit/secrets.toml
+.streamlit/secrets.test.toml
 # SQLite database files
 *.db
 *.db-journal
@@ -15,4 +16,9 @@ __pycache__/
 
 *.pdf
 *.txt
-.streamlit/config.toml
+!packages.txt
+
+
+# Local development and testing utilities
+test_*.py
+run_test_app.py
