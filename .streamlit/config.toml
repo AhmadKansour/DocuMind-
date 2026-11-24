@@ -1,4 +1,6 @@
 [server]
 maxUploadSize = 10
+fileWatcherType = "none"
+
 [client]
 showErrorDetails = "none"
