@@ -68,3 +68,4 @@ websockets==17.2
 extra-streamlit-components==0.1.81
 google-genai==2.33.0
 psycopg[binary]==3.3.9
+python-dotenv==1.2.4
