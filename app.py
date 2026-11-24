@@ -5,6 +5,7 @@ import unicodedata
 import hmac
 import secrets
 import html
+from datetime import datetime, timedelta
 
 import streamlit as st
 import extra_streamlit_components as stx
@@ -217,36 +218,61 @@ st.set_page_config(
 
 
 
-cookie_manager = stx.CookieManager(key="documind_cookie_manager")
-
 COOKIE_NAME = "documind_visitor_id"
 
-# Retrieve the visitor's cookie.
-cookie_value = (
-    st.context.cookies.get(COOKIE_NAME)
-    or cookie_manager.get(COOKIE_NAME)
+cookie_manager = stx.CookieManager(
+    key="documind_cookie_manager"
 )
 
-# Only accept visitor IDs with valid signatures.
+# Retrieve browser cookies.
+# None means the component has not returned its result yet.
+browser_cookies = cookie_manager.cookie_manager(
+    method="getAll",
+    key="documind_cookie_reader",
+    default=None
+)
+
+# First check cookies received by Streamlit.
+cookie_value = st.context.cookies.get(COOKIE_NAME)
+
 visitor_id = verify_visitor_cookie(cookie_value)
 
+# If necessary, check cookies returned by the browser component.
 if visitor_id is None:
-    # Reuse the pending ID across Streamlit reruns.
+
+    if browser_cookies is None:
+        st.info("Preparing your visitor session...")
+        st.stop()
+
+    cookie_value = browser_cookies.get(COOKIE_NAME)
+    visitor_id = verify_visitor_cookie(cookie_value)
+
+# Create a new identity only after cookie retrieval is complete.
+if visitor_id is None:
+
     if "pending_visitor_id" not in st.session_state:
         st.session_state.pending_visitor_id = str(uuid.uuid4())
 
-    visitor_id = st.session_state.pending_visitor_id
+    pending_id = st.session_state.pending_visitor_id
 
-    # Store the signed value, not the plain UUID.
     cookie_manager.set(
         COOKIE_NAME,
-        sign_visitor_id(visitor_id),
+        sign_visitor_id(pending_id),
         key="documind_visitor_cookie",
+        path="/",
+        expires_at=datetime.now() + timedelta(days=365),
+        same_site="lax",
     )
 
-else:
-    # The existing cookie has been verified.
-    st.session_state.pop("pending_visitor_id", None)
+    st.info(
+        "Your visitor session is being initialized. "
+        "Please refresh the page if this message remains."
+    )
+
+    st.stop()
+
+# A valid visitor cookie has been recovered.
+st.session_state.pop("pending_visitor_id", None)
 
 
 
