@@ -21,4 +21,7 @@ __pycache__/
 
 # Local development and testing utilities
 test_*.py
+
+# Allow official automated tests
+!tests/test_*.py
 run_test_app.py
