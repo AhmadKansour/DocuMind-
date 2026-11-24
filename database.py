@@ -434,23 +434,44 @@ def use_ai_request_postgres(
     """
     Atomically enforce visitor and global AI quotas
     using the restricted PostgreSQL function.
+
+    Fail closed if the database is unavailable.
     """
 
-    with get_postgres_connection() as connection:
-        result = connection.execute(
-            """
-            SELECT public.use_ai_request(
-                %s, %s, %s
-            )
-            """,
-            (
-                visitor_id,
-                visitor_limit,
-                global_limit
-            )
-        ).fetchone()
+    try:
+        with get_postgres_connection() as connection:
+            result = connection.execute(
+                """
+                SELECT public.use_ai_request(
+                    %s, %s, %s
+                )
+                """,
+                (
+                    visitor_id,
+                    visitor_limit,
+                    global_limit
+                )
+            ).fetchone()
 
-        return result[0]
+            if result is None:
+                return "database_error"
+
+            if result[0] not in (
+                "allowed",
+                "visitor_limit",
+                "global_limit"
+            ):
+                return "database_error"
+
+            return result[0]
+
+    except Exception as error:
+        print(
+            f"Database quota error: {type(error).__name__}",
+            flush=True
+        )
+
+        return "database_error"
 
 
 if __name__ == "__main__":

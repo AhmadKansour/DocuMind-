@@ -1564,8 +1564,20 @@ if ask_clicked:
                     "You've reached your daily limit of 10 AI questions. "
                     "Please come back tomorrow."
                 )
+            elif quota_result == "database_error":
+                answer_status.update(
+                    label="Service temporarily unavailable",
+                    state="error",
+                    expanded=False
+                )
 
-            else:
+                st.warning(
+                    "DocuMind is temporarily unavailable. "
+                    "Please try again in a few moments."
+                )
+
+
+            elif quota_result == "allowed":
                 try:
 
                     print(
@@ -1574,6 +1586,7 @@ if ask_clicked:
                     )
 
                     gemini_start = time.perf_counter()
+
 
                     ai_answer, answer_found = generate_answer(
                         question_input,
@@ -1698,11 +1711,32 @@ if ask_clicked:
 
                     else:
 
-                        st.error(
-                            "AI answer generation failed."
-                        )
+                       st.error(
+                           "We couldn't complete your request. "
+                           "Please check your internet connection "
+                           "and try again. If the problem continues, "
+                           "please try again later."
+                       )
 
-                        print(
-                            f"Gemini error: {error}",
-                            flush=True
-                        )
+                       print(
+                           f"Answer processing error: "
+                           f"{type(error).__name__}",
+                           flush=True
+                       )
+
+            else:
+                answer_status.update(
+                    label="Service temporarily unavailable",
+                    state="error",
+                    expanded=False
+                )
+
+                st.warning(
+                    "We couldn't verify your request at the moment. "
+                    "Please try again later."
+                )
+
+                print(
+                    "Unexpected quota result received.",
+                    flush=True
+                )
